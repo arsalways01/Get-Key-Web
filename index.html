@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Get Key</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 100px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #key {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Get Your Key</h1>
+  <button onclick="generateKey()">Get Key</button>
+
+  <div id="key"></div>
+
+  <script>
+    function generateKey() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let key = "";
+      for (let i = 0; i < 16; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById("key").innerText = key;
+    }
+  </script>
+
+</body>
+</html>
