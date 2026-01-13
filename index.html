@@ -5,6 +5,7 @@
 <title>Get Key Secure</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- FingerprintJS -->
 <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
 <style>
@@ -41,18 +42,18 @@ pre{
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>1 Device • Key 24 Jam • Reset Setelah 10 Menit</p>
+<p>1 Device • Key 24 Jam • Reset 10 Menit</p>
 
-<button id="getKey">GET KEY</button>
+<button id="getKeyBtn">GET KEY</button>
 <br>
 <button class="link" onclick="openChannel()">SALURAN / GRUP</button>
 
-<pre id="output"></pre>
+<pre id="output">Siap digunakan</pre>
 
 <script>
-// =======================
+// ===============================
 // KONFIGURASI
-// =======================
+// ===============================
 const KEY_LIST = [
   "KEY-ADMIN-001",
   "KEY-ADMIN-002",
@@ -156,31 +157,39 @@ const KEY_LIST = [
 "KEY-ADMIN-100"
 ];
 
-const RESET_TIME  = 10 * 60 * 1000;      // 10 menit
-const DEVICE_TIME = 24 * 60 * 60 * 1000; // 24 jam
+const RESET_TIME  = 10 * 60 * 1000;       // 10 menit
+const DEVICE_TIME = 24 * 60 * 60 * 1000;  // 24 jam
 
-// =======================
+// ===============================
 // CEK SFL
-// =======================
+// ===============================
 const viaSFL =
   new URLSearchParams(location.search).get("from") === "sfl";
 
-// =======================
-// LINK SALURAN
-// =======================
+// ===============================
+// LINK SALURAN (TIDAK BUTUH SFL)
+// ===============================
 function openChannel(){
-  window.open("https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35","_blank");
+  location.href = "https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35";
 }
 
-// =======================
-// FINGERPRINT
-// =======================
+// ===============================
+// FINGERPRINT (ANTI BLOKIR)
+// ===============================
 (async()=>{
-  const fp = await FingerprintJS.load();
-  const { visitorId } = await fp.get();
+  let deviceId = "fallback-" + navigator.userAgent;
 
-  const STORAGE_KEY = "KEY_DATA_" + visitorId;
-  const btn = document.getElementById("getKey");
+  try{
+    const fp = await FingerprintJS.load();
+    const res = await fp.get();
+    if(res.visitorId) deviceId = res.visitorId;
+  }catch(e){
+    // BYPASS JIKA CDN DIBLOKIR
+    console.log("Fingerprint fallback aktif");
+  }
+
+  const STORAGE_KEY = "SECURE_KEY_" + deviceId;
+  const btn = document.getElementById("getKeyBtn");
   const out = document.getElementById("output");
 
   btn.onclick = ()=>{
@@ -189,7 +198,8 @@ function openChannel(){
 
     // ❌ Tidak lewat SFL
     if(!viaSFL){
-      out.textContent = "❌ TOKEN INVALID\nSilakan lewat link resmi";
+      out.textContent =
+        "❌ TOKEN INVALID\nAkses tidak sah";
       return;
     }
 
@@ -201,13 +211,13 @@ function openChannel(){
 
     const data = JSON.parse(saved);
 
-    // Device masih terikat 24 jam
+    // Device masih terkunci 24 jam
     if(now - data.deviceTime < DEVICE_TIME){
 
-      // Sudah lewat 10 menit → invalid
+      // Lewat 10 menit → invalid
       if(now - data.lastAccess > RESET_TIME){
         out.textContent =
-          "❌ TOKEN INVALID\nKey sudah expired\nSilakan lewat SFL ulang";
+          "❌ TOKEN INVALID\nKey sudah expired\nLewat SFL ulang";
         return;
       }
 
@@ -215,12 +225,12 @@ function openChannel(){
       out.textContent =
         "KEY ANDA:\n" + data.key +
         "\n\nStatus: AKTIF" +
-        "\nExpired: " +
+        "\nBerlaku sampai:\n" +
         new Date(data.deviceTime + DEVICE_TIME).toLocaleString();
       return;
     }
 
-    // Device expired total → boleh buat ulang
+    // Device expired total → buat baru
     createKey(now);
   };
 
@@ -236,9 +246,9 @@ function openChannel(){
 
     out.textContent =
       "KEY ANDA:\n" + key +
-      "\n\nStatus: AKTIF" +
-      "\nBerlaku 24 Jam";
+      "\n\nStatus: AKTIF\nBerlaku 24 Jam";
   }
+
 })();
 </script>
 
