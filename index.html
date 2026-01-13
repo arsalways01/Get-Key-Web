@@ -41,7 +41,7 @@ pre {
 <h2>🔐 GET KEY PREMIUM</h2>
 <p>
 1 Device • Berlaku 24 Jam<br>
-Jika key tidak muncul, kemungkinan admin belum menambahkan key
+Jika key tidak muncul, kemungkinan browser clear data
 </p>
 
 <button id="btn">GET KEY PREMIUM</button>
@@ -59,7 +59,7 @@ const KEY_LIST = [
   "KEY-ADMIN-005"
 ];
 
-const EXPIRE_TIME = 24 * 60 * 60 * 1000;
+const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24 jam
 
 // =====================
 // 🔐 DEVICE ID STABIL
@@ -95,8 +95,8 @@ if (saved) {
 btn.onclick = () => {
   if (btn.disabled) return;
 
-  const randomKey =
-    KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
+  // Ambil key acak
+  const randomKey = KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
 
   const expiredAt = Date.now() + EXPIRE_TIME;
 
