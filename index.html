@@ -2,265 +2,170 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Get Key Secure</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- FingerprintJS (dengan fallback anti-blokir) -->
-<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<title>GET KEY PREMIUM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+*{margin:0;padding:0;font-family:Arial}
 body{
-  background:#020617;
-  color:#e5e7eb;
-  font-family:Arial,sans-serif;
+  height:100vh;
+  overflow:hidden;
+  color:#fff;
   text-align:center;
-  padding-top:80px;
+}
+video{
+  position:fixed;
+  top:0;left:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:-1;
+}
+.container{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(0,0,0,.6);
+  padding:25px;
+  border-radius:15px;
+  width:300px;
+}
+.logo{
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #00ffcc;
+  margin-bottom:10px;
 }
 button{
-  padding:12px 26px;
-  font-size:16px;
+  background:#00ffcc;
   border:none;
+  padding:10px;
+  width:100%;
   border-radius:10px;
-  background:#38bdf8;
   cursor:pointer;
-  margin:6px;
+  font-weight:bold;
 }
-pre{
-  margin-top:20px;
-  background:#020617cc;
-  padding:15px;
-  border-radius:8px;
+#keyBox{
+  margin-top:15px;
+  font-weight:bold;
   word-break:break-all;
 }
-.link{
-  background:#22c55e;
-  color:#000;
-}
-.verify{
-  background:#f59e0b;
-  color:#000;
-}
 .small{
-  opacity:.85;
-  font-size:13px;
+  font-size:12px;
+  margin-top:8px;
+  opacity:.8;
 }
+.success{color:#00ffcc}
+.error{color:#ff4d4d}
 </style>
 </head>
 
 <body>
 
-<h2>🔐 GET KEY PREMIUM</h2>
-<p class="small">1 Device • Berlaku 24 Jam • Wajib Verifikasi</p>
+<video autoplay muted loop>
+  <source src="bg.mp4" type="video/mp4">
+</video>
 
-<button class="verify" id="verifyBtn">VERIFIKASI</button>
-<br>
-<button id="getKeyBtn">GET KEY</button>
-<br>
-<button class="link" onclick="openChannel()">SALURAN / GRUP</button>
+<div class="container">
+  <img src="logo.png" class="logo">
+  <div><b>Arsalways</b></div>
 
-<pre id="output">Silakan verifikasi terlebih dahulu.</pre>
+  <br>
+  <button id="verifyBtn">VERIFIKASI</button>
+
+  <div id="status" class="small"></div>
+  <div id="keyBox"></div>
+  <div id="timeLeft" class="small"></div>
+</div>
 
 <script>
-// ===============================
-// KONFIGURASI
-// ===============================
-const KEY_LIST = [
-  "KEY-ADMIN-001",
-  "KEY-ADMIN-002",
-  "KEY-ADMIN-003"
-  "KEY-ADMIN-004"
-  "KEY-ADMIN-005"
-  "KEY-ADMIN-006"
-"KEY-ADMIN-007"
-"KEY-ADMIN-008"
-"KEY-ADMIN-009"
-"KEY-ADMIN-010"
-"KEY-ADMIN-011"
-"KEY-ADMIN-012"
-"KEY-ADMIN-013"
-"KEY-ADMIN-014"
-"KEY-ADMIN-015"
-"KEY-ADMIN-016"
-"KEY-ADMIN-017"
-"KEY-ADMIN-018"
-"KEY-ADMIN-019"
-"KEY-ADMIN-020"
-"KEY-ADMIN-021"
-"KEY-ADMIN-022"
-"KEY-ADMIN-023"
-"KEY-ADMIN-024"
-"KEY-ADMIN-025"
-"KEY-ADMIN-026"
-"KEY-ADMIN-027"
-"KEY-ADMIN-028"
-"KEY-ADMIN-029"
-"KEY-ADMIN-030"
-"KEY-ADMIN-031"
-"KEY-ADMIN-032"
-"KEY-ADMIN-033"
-"KEY-ADMIN-034"
-"KEY-ADMIN-035"
-"KEY-ADMIN-036"
-"KEY-ADMIN-037"
-"KEY-ADMIN-038"
-"KEY-ADMIN-039"
-"KEY-ADMIN-040"
-"KEY-ADMIN-041"
-"KEY-ADMIN-042"
-"KEY-ADMIN-043"
-"KEY-ADMIN-044"
-"KEY-ADMIN-045"
-"KEY-ADMIN-046"
-"KEY-ADMIN-047"
-"KEY-ADMIN-048"
-"KEY-ADMIN-049"
-"KEY-ADMIN-050"
-"KEY-ADMIN-051"
-"KEY-ADMIN-052"
-"KEY-ADMIN-053"
-"KEY-ADMIN-054"
-"KEY-ADMIN-055"
-"KEY-ADMIN-056"
-"KEY-ADMIN-057"
-"KEY-ADMIN-058"
-"KEY-ADMIN-059"
-"KEY-ADMIN-060"
-"KEY-ADMIN-061"
-"KEY-ADMIN-062"
-"KEY-ADMIN-063"
-"KEY-ADMIN-064"
-"KEY-ADMIN-065"
-"KEY-ADMIN-066"
-"KEY-ADMIN-067"
-"KEY-ADMIN-068"
-"KEY-ADMIN-069"
-"KEY-ADMIN-070"
-"KEY-ADMIN-071"
-"KEY-ADMIN-072"
-"KEY-ADMIN-073"
-"KEY-ADMIN-074"
-"KEY-ADMIN-075"
-"KEY-ADMIN-076"
-"KEY-ADMIN-077"
-"KEY-ADMIN-078"
-"KEY-ADMIN-079"
-"KEY-ADMIN-080"
-"KEY-ADMIN-081"
-"KEY-ADMIN-082"
-"KEY-ADMIN-083"
-"KEY-ADMIN-084"
-"KEY-ADMIN-085"
-"KEY-ADMIN-086"
-"KEY-ADMIN-087"
-"KEY-ADMIN-088"
-"KEY-ADMIN-089"
-"KEY-ADMIN-090"
-"KEY-ADMIN-091"
-"KEY-ADMIN-092"
-"KEY-ADMIN-093"
-"KEY-ADMIN-094"
-"KEY-ADMIN-095"
-"KEY-ADMIN-096"
-"KEY-ADMIN-097"
-"KEY-ADMIN-098"
-"KEY-ADMIN-099"
-"KEY-ADMIN-100"
-];
+const DEVICE_ID = btoa(navigator.userAgent + screen.width + screen.height);
+const STORAGE_KEY = "ADMIN_KEY_DATA";
 
-const KEY_LIFETIME = 24 * 60 * 60 * 1000; // 24 jam
-
-// ===============================
-// LINK SALURAN (BEBAS, TIDAK PERLU VERIFIKASI)
-// ===============================
-function openChannel(){
-  location.href = "https://chat.whatsapp.com/FhZLQjKMi0IEMuEbXkvkz8";
+function randomKey(len=12){
+  let c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  return Array.from({length:len},()=>c[Math.floor(Math.random()*c.length)]).join("");
 }
 
-// ===============================
-// FINGERPRINT (ANTI BLOKIR + FALLBACK)
-// ===============================
-(async()=>{
-  let deviceId = "fallback-" + btoa(navigator.userAgent);
+function loadKey(){
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if(!data) return;
 
-  try{
-    const fp = await FingerprintJS.load();
-    const res = await fp.get();
-    if(res && res.visitorId) deviceId = res.visitorId;
-  }catch(e){
-    // Jika CDN diblokir, tetap lanjut (anti-freeze)
-    console.log("Fingerprint fallback aktif");
+  if(data.device !== DEVICE_ID){
+    document.getElementById("keyBox").innerHTML =
+      "<span class='error'>TOKEN INVALID</span>";
+    return;
   }
 
-  const STORAGE_KEY = "SECURE_KEY_" + deviceId;
-  const VERIFY_KEY  = "VERIFIED_" + deviceId;
+  updateDisplay(data);
+}
 
-  const verifyBtn = document.getElementById("verifyBtn");
-  const getKeyBtn = document.getElementById("getKeyBtn");
-  const out = document.getElementById("output");
+function updateDisplay(data){
+  let now = Date.now();
 
-  // ===============================
-  // VERIFIKASI
-  // ===============================
-  verifyBtn.onclick = ()=>{
-    localStorage.setItem(VERIFY_KEY, "1");
-    out.textContent = "✅ VERIFIKASI BERHASIL\nSilakan tekan GET KEY";
-  };
-
-  // ===============================
-  // GET KEY
-  // ===============================
-  getKeyBtn.onclick = ()=>{
-    const verified = localStorage.getItem(VERIFY_KEY);
-    const now = Date.now();
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    // ❌ Belum verifikasi
-    if(!verified){
-      out.textContent = "❌ TOKEN INVALID\nSilakan verifikasi terlebih dahulu";
-      return;
-    }
-
-    // Belum pernah punya key
-    if(!saved){
-      createKey(now);
-      return;
-    }
-
-    const data = JSON.parse(saved);
-
-    // Masih dalam 24 jam
-    if(now - data.created < KEY_LIFETIME){
-      out.textContent =
-        "KEY ANDA:\n" + data.key +
-        "\n\nStatus: AKTIF" +
-        "\nExpired:\n" +
-        new Date(data.created + KEY_LIFETIME).toLocaleString();
-      return;
-    }
-
-    // Sudah lewat 24 jam → reset total
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(VERIFY_KEY);
-    out.textContent =
-      "⛔ KEY EXPIRED\nSilakan verifikasi ulang untuk mendapatkan key baru";
-  };
-
-  function createKey(now){
-    const key =
-      KEY_LIST[Math.floor(Math.random()*KEY_LIST.length)];
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      key: key,
-      created: now
-    }));
-
-    out.textContent =
-      "KEY ANDA:\n" + key +
-      "\n\nStatus: AKTIF" +
-      "\nBerlaku 24 Jam";
+  // ubah key jadi acak setelah 10 menit
+  if(now - data.created > 10*60*1000 && !data.randomized){
+    data.key = randomKey();
+    data.randomized = true;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-})();
+  if(now > data.expired){
+    document.getElementById("keyBox").innerHTML =
+      "<span class='error'>KEY EXPIRED</span>";
+    return;
+  }
+
+  document.getElementById("keyBox").innerHTML =
+    "<span class='success'>KEY: "+data.key+"</span>";
+
+  let s = Math.floor((data.expired - now)/1000);
+  let h = Math.floor(s/3600);
+  let m = Math.floor((s%3600)/60);
+  let d = s%60;
+  document.getElementById("timeLeft").innerText =
+    `Sisa waktu: ${h}j ${m}m ${d}d`;
+}
+
+document.getElementById("verifyBtn").onclick = ()=>{
+  let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if(saved){
+    loadKey();
+    return;
+  }
+
+  let btn = document.getElementById("verifyBtn");
+  let status = document.getElementById("status");
+  btn.disabled = true;
+
+  let c = 10;
+  status.innerText = "Verifikasi: "+c;
+  let timer = setInterval(()=>{
+    c--;
+    status.innerText = "Verifikasi: "+c;
+    if(c<=0){
+      clearInterval(timer);
+      status.innerText = "SUCCESS";
+      setTimeout(()=>{
+        let data = {
+          key:"KEY-ADMIN-00",
+          device:DEVICE_ID,
+          created:Date.now(),
+          expired:Date.now()+24*60*60*1000,
+          randomized:false
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        loadKey();
+      },1500);
+    }
+  },1000);
+};
+
+setInterval(loadKey,1000);
+loadKey();
 </script>
 
 </body>
