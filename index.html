@@ -24,7 +24,7 @@ button {
 }
 button:disabled {
   background:#475569;
-  cursor: not-allowed;
+  cursor:not-allowed;
 }
 pre {
   margin-top:20px;
@@ -41,15 +41,35 @@ pre {
 <h2>🔐 GET KEY PREMIUM</h2>
 <p>
 1 Device • Berlaku 24 Jam<br>
-Jika key tidak muncul, kemungkinan browser clear data
+Halaman ini hanya bisa dibuka lewat link resmi
 </p>
 
 <button id="btn">GET KEY PREMIUM</button>
 <pre id="out"></pre>
 
 <script>
+// ================================
+// 🔒 PROTEKSI WAJIB LEWAT SFL
+// ================================
+const params = new URLSearchParams(window.location.search);
+
+// Jika tidak lewat SFL → TOLAK
+if (!params.has("from") || params.get("from") !== "sfl") {
+  document.body.innerHTML =
+    "<h2>❌ AKSES DITOLAK</h2><p>Silakan buka lewat link resmi</p>";
+  throw new Error("Blocked access");
+}
+
+// Cegah refresh / buka ulang
+if (sessionStorage.getItem("VISITED")) {
+  document.body.innerHTML =
+    "<h2>⛔ AKSES DIBLOKIR</h2><p>Silakan lewat link SFL ulang</p>";
+  throw new Error("Reload blocked");
+}
+sessionStorage.setItem("VISITED", "1");
+
 // =====================
-// 🔑 KEY DIATUR MANUAL
+// 🔑 KEY MANUAL
 // =====================
 const KEY_LIST = [
   "KEY-ADMIN-001",
@@ -59,10 +79,10 @@ const KEY_LIST = [
   "KEY-ADMIN-005"
 ];
 
-const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24 jam
+const EXPIRE_TIME = 24 * 60 * 60 * 1000;
 
 // =====================
-// 🔐 DEVICE ID STABIL
+// 🔐 DEVICE ID
 // =====================
 function getDeviceId() {
   let id = localStorage.getItem("DEVICE_ID");
@@ -79,9 +99,8 @@ const STORAGE_KEY = "KEY_" + deviceId;
 const btn = document.getElementById("btn");
 const out = document.getElementById("out");
 
+// Cek key lama
 const saved = localStorage.getItem(STORAGE_KEY);
-
-// Jika device sudah punya key & belum expired
 if (saved) {
   const data = JSON.parse(saved);
   if (Date.now() < data.expired) {
@@ -95,8 +114,8 @@ if (saved) {
 btn.onclick = () => {
   if (btn.disabled) return;
 
-  // Ambil key acak
-  const randomKey = KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
+  const randomKey =
+    KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
 
   const expiredAt = Date.now() + EXPIRE_TIME;
 
