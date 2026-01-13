@@ -1,48 +1,67 @@
 const express = require("express");
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
 const app = express();
-
+app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-const DB = "./keys.json";
+mongoose.connect("mongodb://127.0.0.1/getkey");
 
-// Load keys
-function loadKeys() {
-  if (!fs.existsSync(DB)) fs.writeFileSync(DB, "[]");
-  return JSON.parse(fs.readFileSync(DB));
-}
-
-// Save keys
-function saveKeys(keys) {
-  fs.writeFileSync(DB, JSON.stringify(keys, null, 2));
-}
-
-// Generate key
-app.get("/generate", (req, res) => {
-  const keys = loadKeys();
-  const newKey = uuidv4();
-
-  keys.push({
-    key: newKey,
-    created_at: new Date(),
-    active: true
-  });
-
-  saveKeys(keys);
-  res.json({ key: newKey });
+const KeySchema = new mongoose.Schema({
+  fingerprint: String,
+  key: String,
+  expire: Number,
+  used: Boolean
 });
 
-// Validate key
-app.get("/validate", (req, res) => {
-  const { key } = req.query;
-  const keys = loadKeys();
+const KeyModel = mongoose.model("keys", KeySchema);
 
-  const valid = keys.find(k => k.key === key && k.active);
-  res.json({ valid: !!valid });
+function generateKey() {
+  return "KEY-" + crypto.randomBytes(6).toString("hex").toUpperCase();
+}
+
+app.post("/get-key", async (req, res) => {
+  const { fingerprint } = req.body;
+  const now = Date.now();
+
+  let data = await KeyModel.findOne({ fingerprint });
+
+  // Jika key masih aktif → kirim ulang
+  if (data && data.expire > now) {
+    return res.json({
+      key: data.key,
+      expire: data.expire,
+      status: "EXISTING"
+    });
+  }
+
+  // Generate 100 key acak tiap verifikasi
+  const newKey = generateKey();
+  const expire = now + (24 * 60 * 60 * 1000);
+
+  if (data) {
+    data.key = newKey;
+    data.expire = expire;
+    data.used = false;
+    await data.save();
+  } else {
+    await KeyModel.create({
+      fingerprint,
+      key: newKey,
+      expire,
+      used: false
+    });
+  }
+
+  res.json({
+    key: newKey,
+    expire,
+    status: "NEW"
+  });
 });
 
 app.listen(3000, () => {
-  console.log("Server running at http://localhost:3000");
+  console.log("SERVER RUNNING ON PORT 3000");
 });
