@@ -5,6 +5,9 @@
 <title>Get Key Premium</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- Fingerprint -->
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+
 <style>
 body {
   background: url("https://d.top4top.io/p_3665on19b0.png") no-repeat center center fixed;
@@ -15,12 +18,13 @@ body {
   padding-top: 90px;
 }
 button {
-  padding:12px 28px;
+  padding:12px 26px;
   font-size:16px;
   border:none;
   border-radius:10px;
   background:#38bdf8;
   cursor:pointer;
+  margin:6px;
 }
 pre {
   margin-top:20px;
@@ -29,15 +33,22 @@ pre {
   border-radius:8px;
   word-break:break-all;
 }
+.whatsapp {
+  background:#22c55e;
+  color:#000;
+}
 </style>
 </head>
 
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>Key aktif 10 menit • Key baru wajib lewat SFL ulang</p>
+<p>1 Device • Aktif 10 Menit • Key baru wajib lewat SFL</p>
 
 <button id="btn">GET KEY</button>
+<br>
+<button class="whatsapp" onclick="joinWA()">MASUK GRUP WHATSAPP</button>
+
 <pre id="out"></pre>
 
 <script>
@@ -147,22 +158,7 @@ const KEY_LIST = [
 "KEY-ADMIN-100"
 ];
 
-const EXPIRE_TIME = 10 * 60 * 1000; // 10 menit
-
-// =====================
-// DEVICE ID
-// =====================
-function getDeviceId() {
-  let id = localStorage.getItem("DEVICE_ID");
-  if (!id) {
-    id = "DEV-" + crypto.randomUUID();
-    localStorage.setItem("DEVICE_ID", id);
-  }
-  return id;
-}
-
-const deviceId = getDeviceId();
-const STORAGE_KEY = "KEY_DATA_" + deviceId;
+const ACTIVE_TIME = 10 * 60 * 1000; // 10 menit
 
 // =====================
 // CEK SFL
@@ -170,85 +166,96 @@ const STORAGE_KEY = "KEY_DATA_" + deviceId;
 const viaSFL =
   new URLSearchParams(location.search).get("from") === "sfl";
 
-const btn = document.getElementById("btn");
-const out = document.getElementById("out");
-
 // =====================
-// RENDER KEY
+// WHATSAPP
 // =====================
-function render() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) {
-    out.textContent = "Belum ada key.\nSilakan klik GET KEY";
-    return;
-  }
-
-  const data = JSON.parse(saved);
-  const now = Date.now();
-  const expired = now - data.time >= EXPIRE_TIME;
-
-  out.textContent =
-    "KEY ANDA:\n" + data.key +
-    "\n\nStatus: " + (expired ? "EXPIRED" : "AKTIF") +
-    "\nDibuat: " + new Date(data.time).toLocaleString();
+function join Saluran() {
+  window.open("https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35", "_blank");
 }
 
 // =====================
-// BUTTON CLICK
+// FINGERPRINT
 // =====================
-btn.onclick = () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const now = Date.now();
+(async () => {
+  const fp = await FingerprintJS.load();
+  const { visitorId } = await fp.get();
 
-  // Jika belum punya key → buat (HARUS SFL)
-  if (!saved) {
-    if (!viaSFL) {
-      out.textContent =
-        "❌ AKSES DITOLAK\nAmbil key harus lewat link SFL";
+  const STORAGE_KEY = "KEY_DATA_" + visitorId;
+  const btn = document.getElementById("btn");
+  const out = document.getElementById("out");
+
+  function render() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      out.textContent = "Belum ada key.\nKlik GET KEY untuk mengambil.";
       return;
     }
+
+    const data = JSON.parse(saved);
+    const now = Date.now();
+    const expired = now - data.time >= ACTIVE_TIME;
+
+    out.textContent =
+      "KEY ANDA:\n" +
+      (expired ? "KEY SUDAH TIDAK AKTIF" : data.key) +
+      "\n\nStatus: " +
+      (expired ? "EXPIRED" : "AKTIF") +
+      "\nDibuat: " +
+      new Date(data.time).toLocaleString();
+  }
+
+  btn.onclick = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const now = Date.now();
+
+    // BELUM PUNYA KEY
+    if (!saved) {
+      if (!viaSFL) {
+        out.textContent =
+          "❌ AKSES DITOLAK\nAmbil key harus lewat link SFL";
+        return;
+      }
+      createKey();
+      return;
+    }
+
+    const data = JSON.parse(saved);
+    const expired = now - data.time >= ACTIVE_TIME;
+
+    // MASIH AKTIF → TAMPILKAN
+    if (!expired) {
+      render();
+      return;
+    }
+
+    // SUDAH EXPIRED → BUTUH SFL ULANG
+    if (!viaSFL) {
+      render();
+      out.textContent +=
+        "\n\nUntuk mendapatkan key baru,\nSilakan lewat SFL ulang.";
+      return;
+    }
+
     createKey();
-    return;
-  }
+  };
 
-  const data = JSON.parse(saved);
-  const expired = now - data.time >= EXPIRE_TIME;
+  function createKey() {
+    const randomKey =
+      KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
 
-  // Jika key masih aktif → tampilkan saja
-  if (!expired) {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        key: randomKey,
+        time: Date.now()
+      })
+    );
+
     render();
-    return;
   }
-
-  // Jika key expired → butuh SFL ulang
-  if (!viaSFL) {
-    render();
-    out.textContent +=
-      "\n\nUntuk mendapatkan key baru,\nSilakan lewat SFL ulang";
-    return;
-  }
-
-  // Buat key baru
-  createKey();
-};
-
-function createKey() {
-  const randomKey =
-    KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      key: randomKey,
-      time: Date.now()
-    })
-  );
 
   render();
-}
-
-// Render awal
-render();
+})();
 </script>
 
 </body>
