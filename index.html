@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Get Key</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 120px;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #38bdf8;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+
+    #keyBox {
+      margin-top: 20px;
+      font-size: 18px;
+      word-break: break-all;
+    }
+  </style>
+
+  <!-- FingerprintJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+</head>
+<body>
+
+  <h1>🔑 Get Your Key</h1>
+  <p>1 Key per Device (Fingerprint)</p>
+
+  <button id="btn">Get Key</button>
+  <div id="keyBox"></div>
+
+  <script>
+    const STORAGE_PREFIX = "KEY_FP_";
+
+    function generateKey() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let key = "KEY-";
+      for (let i = 0; i < 24; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return key;
+    }
+
+    async function init() {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const fingerprint = result.visitorId;
+
+      const storageKey = STORAGE_PREFIX + fingerprint;
+      const savedKey = localStorage.getItem(storageKey);
+
+      const btn = document.getElementById("btn");
+      const box = document.getElementById("keyBox");
+
+      if (savedKey) {
+        box.innerHTML = "<b>Your Key:</b><br>" + savedKey;
+        btn.disabled = true;
+        return;
+      }
+
+      btn.onclick = () => {
+        const newKey = generateKey();
+        localStorage.setItem(storageKey, newKey);
+        box.innerHTML = "<b>Your Key:</b><br>" + newKey;
+        btn.disabled = true;
+      };
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
