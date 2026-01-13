@@ -2,15 +2,13 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Get Key</title>
+<title>Get Key Premium</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
 <style>
 body {
   background: url("https://d.top4top.io/p_3665on19b0.png") no-repeat center center fixed;
-  background-size: cover; /* supaya memenuhi layar */
+  background-size: cover;
   color: #e5e7eb;
   font-family: Arial, sans-serif;
   text-align: center;
@@ -26,10 +24,11 @@ button {
 }
 button:disabled {
   background:#475569;
+  cursor: not-allowed;
 }
 pre {
   margin-top:20px;
-  background:#020617;
+  background:#020617cc;
   padding:15px;
   border-radius:8px;
   word-break:break-all;
@@ -40,7 +39,10 @@ pre {
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>1 Device • Berlaku 24 Jam Jika Key Tidak Work Kemungkinan Admin Belum Menambah Key Tersebut</p>
+<p>
+1 Device • Berlaku 24 Jam<br>
+Jika key tidak muncul, kemungkinan admin belum menambahkan key
+</p>
 
 <button id="btn">GET KEY PREMIUM</button>
 <pre id="out"></pre>
@@ -59,51 +61,60 @@ const KEY_LIST = [
 
 const EXPIRE_TIME = 24 * 60 * 60 * 1000;
 
-(async () => {
-  const fp = await FingerprintJS.load();
-  const { visitorId } = await fp.get();
-
-  const STORAGE_KEY = "DEVICE_KEY_" + visitorId;
-  const btn = document.getElementById("btn");
-  const out = document.getElementById("out");
-
-  const saved = localStorage.getItem(STORAGE_KEY);
-
-  // Jika device sudah punya key & belum expired
-  if (saved) {
-    const data = JSON.parse(saved);
-    if (Date.now() < data.expired) {
-      showKey(data.key, data.expired);
-      btn.disabled = true;
-      return;
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+// =====================
+// 🔐 DEVICE ID STABIL
+// =====================
+function getDeviceId() {
+  let id = localStorage.getItem("DEVICE_ID");
+  if (!id) {
+    id = "DEV-" + crypto.randomUUID();
+    localStorage.setItem("DEVICE_ID", id);
   }
+  return id;
+}
 
-  btn.onclick = () => {
-    // Ambil key acak
-    const randomKey =
-      KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
+const deviceId = getDeviceId();
+const STORAGE_KEY = "KEY_" + deviceId;
 
-    const expiredAt = Date.now() + EXPIRE_TIME;
+const btn = document.getElementById("btn");
+const out = document.getElementById("out");
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      key: randomKey,
-      expired: expiredAt
-    }));
+const saved = localStorage.getItem(STORAGE_KEY);
 
-    showKey(randomKey, expiredAt);
+// Jika device sudah punya key & belum expired
+if (saved) {
+  const data = JSON.parse(saved);
+  if (Date.now() < data.expired) {
+    showKey(data.key, data.expired);
     btn.disabled = true;
-  };
-
-  function showKey(key, expired) {
-    out.textContent =
-      "KEY ANDA:\n" + key +
-      "\n\nExpired:\n" +
-      new Date(expired).toLocaleString();
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
   }
-})();
+}
+
+btn.onclick = () => {
+  if (btn.disabled) return;
+
+  const randomKey =
+    KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
+
+  const expiredAt = Date.now() + EXPIRE_TIME;
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ key: randomKey, expired: expiredAt })
+  );
+
+  showKey(randomKey, expiredAt);
+  btn.disabled = true;
+};
+
+function showKey(key, expired) {
+  out.textContent =
+    "KEY ANDA:\n" + key +
+    "\n\nExpired:\n" +
+    new Date(expired).toLocaleString();
+}
 </script>
 
 </body>
