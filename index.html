@@ -5,7 +5,7 @@
 <title>Get Key Secure</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- FingerprintJS -->
+<!-- FingerprintJS (dengan fallback anti-blokir) -->
 <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
 <style>
@@ -36,19 +36,29 @@ pre{
   background:#22c55e;
   color:#000;
 }
+.verify{
+  background:#f59e0b;
+  color:#000;
+}
+.small{
+  opacity:.85;
+  font-size:13px;
+}
 </style>
 </head>
 
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>1 Device • Key 24 Jam • Reset 10 Menit</p>
+<p class="small">1 Device • Berlaku 24 Jam • Wajib Verifikasi</p>
 
+<button class="verify" id="verifyBtn">VERIFIKASI</button>
+<br>
 <button id="getKeyBtn">GET KEY</button>
 <br>
 <button class="link" onclick="openChannel()">SALURAN / GRUP</button>
 
-<pre id="output">Siap digunakan</pre>
+<pre id="output">Silakan verifikasi terlebih dahulu.</pre>
 
 <script>
 // ===============================
@@ -157,53 +167,60 @@ const KEY_LIST = [
 "KEY-ADMIN-100"
 ];
 
-const RESET_TIME  = 10 * 60 * 1000;       // 10 menit
-const DEVICE_TIME = 24 * 60 * 60 * 1000;  // 24 jam
+const KEY_LIFETIME = 24 * 60 * 60 * 1000; // 24 jam
 
 // ===============================
-// CEK SFL
-// ===============================
-const viaSFL =
-  new URLSearchParams(location.search).get("from") === "sfl";
-
-// ===============================
-// LINK SALURAN (TIDAK BUTUH SFL)
+// LINK SALURAN (BEBAS, TIDAK PERLU VERIFIKASI)
 // ===============================
 function openChannel(){
-  location.href = "https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35";
+  location.href = "https://chat.whatsapp.com/FhZLQjKMi0IEMuEbXkvkz8";
 }
 
 // ===============================
-// FINGERPRINT (ANTI BLOKIR)
+// FINGERPRINT (ANTI BLOKIR + FALLBACK)
 // ===============================
 (async()=>{
-  let deviceId = "fallback-" + navigator.userAgent;
+  let deviceId = "fallback-" + btoa(navigator.userAgent);
 
   try{
     const fp = await FingerprintJS.load();
     const res = await fp.get();
-    if(res.visitorId) deviceId = res.visitorId;
+    if(res && res.visitorId) deviceId = res.visitorId;
   }catch(e){
-    // BYPASS JIKA CDN DIBLOKIR
+    // Jika CDN diblokir, tetap lanjut (anti-freeze)
     console.log("Fingerprint fallback aktif");
   }
 
   const STORAGE_KEY = "SECURE_KEY_" + deviceId;
-  const btn = document.getElementById("getKeyBtn");
+  const VERIFY_KEY  = "VERIFIED_" + deviceId;
+
+  const verifyBtn = document.getElementById("verifyBtn");
+  const getKeyBtn = document.getElementById("getKeyBtn");
   const out = document.getElementById("output");
 
-  btn.onclick = ()=>{
+  // ===============================
+  // VERIFIKASI
+  // ===============================
+  verifyBtn.onclick = ()=>{
+    localStorage.setItem(VERIFY_KEY, "1");
+    out.textContent = "✅ VERIFIKASI BERHASIL\nSilakan tekan GET KEY";
+  };
+
+  // ===============================
+  // GET KEY
+  // ===============================
+  getKeyBtn.onclick = ()=>{
+    const verified = localStorage.getItem(VERIFY_KEY);
     const now = Date.now();
     const saved = localStorage.getItem(STORAGE_KEY);
 
-    // ❌ Tidak lewat SFL
-    if(!viaSFL){
-      out.textContent =
-        "❌ TOKEN INVALID\nAkses tidak sah";
+    // ❌ Belum verifikasi
+    if(!verified){
+      out.textContent = "❌ TOKEN INVALID\nSilakan verifikasi terlebih dahulu";
       return;
     }
 
-    // Belum pernah ambil key
+    // Belum pernah punya key
     if(!saved){
       createKey(now);
       return;
@@ -211,27 +228,21 @@ function openChannel(){
 
     const data = JSON.parse(saved);
 
-    // Device masih terkunci 24 jam
-    if(now - data.deviceTime < DEVICE_TIME){
-
-      // Lewat 10 menit → invalid
-      if(now - data.lastAccess > RESET_TIME){
-        out.textContent =
-          "❌ TOKEN INVALID\nKey sudah expired\nLewat SFL ulang";
-        return;
-      }
-
-      // Masih aktif
+    // Masih dalam 24 jam
+    if(now - data.created < KEY_LIFETIME){
       out.textContent =
         "KEY ANDA:\n" + data.key +
         "\n\nStatus: AKTIF" +
-        "\nBerlaku sampai:\n" +
-        new Date(data.deviceTime + DEVICE_TIME).toLocaleString();
+        "\nExpired:\n" +
+        new Date(data.created + KEY_LIFETIME).toLocaleString();
       return;
     }
 
-    // Device expired total → buat baru
-    createKey(now);
+    // Sudah lewat 24 jam → reset total
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(VERIFY_KEY);
+    out.textContent =
+      "⛔ KEY EXPIRED\nSilakan verifikasi ulang untuk mendapatkan key baru";
   };
 
   function createKey(now){
@@ -240,13 +251,13 @@ function openChannel(){
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       key: key,
-      deviceTime: now,
-      lastAccess: now
+      created: now
     }));
 
     out.textContent =
       "KEY ANDA:\n" + key +
-      "\n\nStatus: AKTIF\nBerlaku 24 Jam";
+      "\n\nStatus: AKTIF" +
+      "\nBerlaku 24 Jam";
   }
 
 })();
