@@ -1,107 +1,109 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Get Key Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Get Key</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body {
-      background: #0f172a;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 80px 20px;
-    }
-    button {
-      padding: 14px 30px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      background: #38bdf8;
-      cursor: pointer;
-    }
-    button:disabled {
-      background: gray;
-    }
-    #keyBox {
-      margin-top: 20px;
-      word-break: break-all;
-      font-size: 17px;
-    }
-    small {
-      color: #94a3b8;
-    }
-  </style>
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
-  <!-- FingerprintJS (stabil di WebView) -->
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<style>
+body {
+  background: url("https://d.top4top.io/p_3665on19b0.png") no-repeat center center fixed;
+  background-size: cover; /* supaya memenuhi layar */
+  color: #e5e7eb;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding-top: 90px;
+}
+button {
+  padding:12px 28px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#38bdf8;
+  cursor:pointer;
+}
+button:disabled {
+  background:#475569;
+}
+pre {
+  margin-top:20px;
+  background:#020617;
+  padding:15px;
+  border-radius:8px;
+  word-break:break-all;
+}
+</style>
 </head>
+
 <body>
 
-<h2>🔐 GET KEY PANEL</h2>
-<p>1 Device • Expired 24 Jam</p>
+<h2>🔐 GET KEY PREMIUM</h2>
+<p>1 Device • Berlaku 24 Jam Jika Key Tidak Work Kemungkinan Admin Belum Menambah Key Tersebut</p>
 
-<button id="btn">GET KEY</button>
-<div id="keyBox"></div>
+<button id="btn">GET KEY PREMIUM</button>
+<pre id="out"></pre>
 
 <script>
-const EXPIRED = 24 * 60 * 60 * 1000; // 24 jam
+// =====================
+// 🔑 KEY DIATUR MANUAL
+// =====================
+const KEY_LIST = [
+  "KEY-ADMIN-001",
+  "KEY-ADMIN-002",
+  "KEY-ADMIN-003",
+  "KEY-ADMIN-004",
+  "KEY-ADMIN-005"
+];
 
-function generateKey() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let key = "PANEL-";
-  for (let i = 0; i < 20; i++) {
-    key += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return key;
-}
+const EXPIRE_TIME = 24 * 60 * 60 * 1000;
 
-async function init() {
+(async () => {
   const fp = await FingerprintJS.load();
   const { visitorId } = await fp.get();
 
-  const STORAGE = "PANEL_KEY_" + visitorId;
+  const STORAGE_KEY = "DEVICE_KEY_" + visitorId;
   const btn = document.getElementById("btn");
-  const box = document.getElementById("keyBox");
+  const out = document.getElementById("out");
 
-  const saved = localStorage.getItem(STORAGE);
+  const saved = localStorage.getItem(STORAGE_KEY);
 
+  // Jika device sudah punya key & belum expired
   if (saved) {
     const data = JSON.parse(saved);
-    if (Date.now() < data.expire) {
-      showKey(data.key, data.expire);
+    if (Date.now() < data.expired) {
+      showKey(data.key, data.expired);
       btn.disabled = true;
       return;
     } else {
-      localStorage.removeItem(STORAGE);
+      localStorage.removeItem(STORAGE_KEY);
     }
   }
 
   btn.onclick = () => {
-    const key = generateKey();
-    const expire = Date.now() + EXPIRED;
+    // Ambil key acak
+    const randomKey =
+      KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
 
-    localStorage.setItem(STORAGE, JSON.stringify({ key, expire }));
-    showKey(key, expire);
+    const expiredAt = Date.now() + EXPIRE_TIME;
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      key: randomKey,
+      expired: expiredAt
+    }));
+
+    showKey(randomKey, expiredAt);
     btn.disabled = true;
-
-    // Kirim ke APK Panel (opsional)
-    if (window.Android) {
-      Android.onGetKey(key);
-    }
   };
-}
 
-function showKey(key, expire) {
-  const sisa = Math.floor((expire - Date.now()) / 1000);
-  document.getElementById("keyBox").innerHTML = `
-    <b>KEY ANDA:</b><br>${key}<br>
-    <small>Expired dalam ${sisa} detik</small>
-  `;
-}
-
-init();
+  function showKey(key, expired) {
+    out.textContent =
+      "KEY ANDA:\n" + key +
+      "\n\nExpired:\n" +
+      new Date(expired).toLocaleString();
+  }
+})();
 </script>
 
 </body>
