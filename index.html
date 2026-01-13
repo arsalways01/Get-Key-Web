@@ -7,83 +7,94 @@
 
 <style>
 *{margin:0;padding:0;font-family:Arial}
-body{
-  height:100vh;
-  overflow:hidden;
-  color:#fff;
-  text-align:center;
-}
+body{height:100vh;overflow:hidden;color:#fff}
+
 video{
   position:fixed;
-  top:0;left:0;
+  inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
   z-index:-1;
 }
+
 .container{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  background:rgba(0,0,0,.6);
+  width:340px;
+  background:rgba(0,0,0,.65);
   padding:25px;
-  border-radius:15px;
-  width:300px;
+  border-radius:16px;
+  text-align:center;
 }
+
 .logo{
-  width:100px;
-  height:100px;
+  width:110px;
+  height:110px;
   border-radius:50%;
   object-fit:cover;
   border:3px solid #00ffcc;
-  margin-bottom:10px;
+  margin-bottom:8px;
 }
+
 button{
-  background:#00ffcc;
-  border:none;
-  padding:10px;
   width:100%;
+  padding:12px;
+  border:none;
   border-radius:10px;
+  background:#00ffcc;
+  font-weight:bold;
   cursor:pointer;
-  font-weight:bold;
-}
-#keyBox{
-  margin-top:15px;
-  font-weight:bold;
-  word-break:break-all;
-}
-.small{
-  font-size:12px;
   margin-top:8px;
-  opacity:.8;
 }
+
+.copyBtn{background:#222;color:#00ffcc}
 .success{color:#00ffcc}
 .error{color:#ff4d4d}
+
+#status,#timeLeft{font-size:12px;opacity:.85;margin-top:8px}
+#keyBox{margin-top:15px;font-weight:bold;word-break:break-all}
 </style>
 </head>
 
 <body>
 
-<video autoplay muted loop>
+<video autoplay muted loop playsinline>
   <source src="bg.mp4" type="video/mp4">
 </video>
 
 <div class="container">
+
   <img src="logo.png" class="logo">
   <div><b>Arsalways</b></div>
 
-  <br>
   <button id="verifyBtn">VERIFIKASI</button>
+  <button id="retryBtn" style="display:none">AMBIL KEY LAGI</button>
 
-  <div id="status" class="small"></div>
+  <div id="status"></div>
   <div id="keyBox"></div>
-  <div id="timeLeft" class="small"></div>
+  <button id="copyBtn" class="copyBtn" style="display:none">COPY KEY</button>
+  <div id="timeLeft"></div>
+
 </div>
 
 <script>
-const DEVICE_ID = btoa(navigator.userAgent + screen.width + screen.height);
-const STORAGE_KEY = 
+// ===== FINGERPRINT =====
+const DEVICE_ID = btoa(
+  navigator.userAgent +
+  navigator.language +
+  screen.width +
+  screen.height
+);
+
+// ===== STORAGE =====
+const ACTIVE_KEY = "ACTIVE_KEY_DATA";
+const USED_KEYS = "USED_KEYS_POOL";
+
+// ===== KEY LIST =====
+const BASE_KEYS = [
 "KEY-ADMIN-000"
 "KEY-ADMIN-001"
 "KEY-ADMIN-002"
@@ -184,88 +195,128 @@ const STORAGE_KEY =
 "KEY-ADMIN-097"
 "KEY-ADMIN-098"
 "KEY-ADMIN-099"
-"KEY-ADMIN-100"
-  ;
+"KEY-ADMIN-100"];
 
-function randomKey(len=12){
-  let c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+// ===== UTIL =====
+function randomKey(len=14){
+  const c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from({length:len},()=>c[Math.floor(Math.random()*c.length)]).join("");
 }
 
+function getUnusedKey(){
+  let used = JSON.parse(localStorage.getItem(USED_KEYS)||"[]");
+
+  for(let k of BASE_KEYS){
+    if(!used.includes(k)){
+      used.push(k);
+      localStorage.setItem(USED_KEYS,JSON.stringify(used));
+      return k;
+    }
+  }
+
+  let rk = randomKey();
+  used.push(rk);
+  localStorage.setItem(USED_KEYS,JSON.stringify(used));
+  return rk;
+}
+
+// ===== LOAD =====
 function loadKey(){
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  let data = JSON.parse(localStorage.getItem(ACTIVE_KEY));
   if(!data) return;
 
   if(data.device !== DEVICE_ID){
-    document.getElementById("keyBox").innerHTML =
-      "<span class='error'>TOKEN INVALID</span>";
+    showInvalid();
     return;
   }
 
-  updateDisplay(data);
-}
-
-function updateDisplay(data){
   let now = Date.now();
 
-  // ubah key jadi acak setelah 10 menit
-  if(now - data.created > 10*60*1000 && !data.randomized){
+  if(!data.randomized && now - data.created >= 10*60*1000){
     data.key = randomKey();
     data.randomized = true;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(ACTIVE_KEY,JSON.stringify(data));
   }
 
-  if(now > data.expired){
-    document.getElementById("keyBox").innerHTML =
-      "<span class='error'>KEY EXPIRED</span>";
+  if(now >= data.expired){
+    localStorage.removeItem(ACTIVE_KEY);
+    showInvalid();
     return;
   }
 
-  document.getElementById("keyBox").innerHTML =
-    "<span class='success'>KEY: "+data.key+"</span>";
+  lockUI(data);
+}
 
-  let s = Math.floor((data.expired - now)/1000);
+function lockUI(data){
+  document.getElementById("verifyBtn").style.display="none";
+  document.getElementById("retryBtn").style.display="none";
+  document.getElementById("copyBtn").style.display="block";
+
+  document.getElementById("keyBox").innerHTML =
+    `<span class="success">KEY: <span id="keyText">${data.key}</span></span>`;
+
+  let s = Math.floor((data.expired - Date.now())/1000);
   let h = Math.floor(s/3600);
   let m = Math.floor((s%3600)/60);
   let d = s%60;
+
   document.getElementById("timeLeft").innerText =
     `Sisa waktu: ${h}j ${m}m ${d}d`;
 }
 
-document.getElementById("verifyBtn").onclick = ()=>{
-  let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-  if(saved){
-    loadKey();
-    return;
-  }
+function showInvalid(){
+  document.getElementById("keyBox").innerHTML =
+    `<span class="error">KEY TIDAK VALID / SUDAH DIPAKAI</span>`;
+  document.getElementById("retryBtn").style.display="block";
+}
 
-  let btn = document.getElementById("verifyBtn");
-  let status = document.getElementById("status");
-  btn.disabled = true;
+// ===== VERIFY =====
+function startVerify(){
+  let btn=document.getElementById("verifyBtn");
+  let status=document.getElementById("status");
+  btn.disabled=true;
 
-  let c = 10;
-  status.innerText = "Verifikasi: "+c;
-  let timer = setInterval(()=>{
+  let c=10;
+  status.innerText="Verifikasi: "+c;
+
+  let t=setInterval(()=>{
     c--;
-    status.innerText = "Verifikasi: "+c;
+    status.innerText="Verifikasi: "+c;
     if(c<=0){
-      clearInterval(timer);
-      status.innerText = "SUCCESS";
+      clearInterval(t);
+      status.innerText="SUCCESS";
+
       setTimeout(()=>{
-        let data = {
-          key:"KEY-ADMIN-00",
+        let data={
+          key:getUnusedKey(),
           device:DEVICE_ID,
           created:Date.now(),
           expired:Date.now()+24*60*60*1000,
           randomized:false
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem(ACTIVE_KEY,JSON.stringify(data));
         loadKey();
-      },1500);
+      },1000);
     }
   },1000);
+}
+
+// ===== COPY =====
+document.getElementById("copyBtn").onclick=()=>{
+  navigator.clipboard.writeText(
+    document.getElementById("keyText").innerText
+  );
+  alert("KEY berhasil disalin");
 };
 
+// ===== BUTTON =====
+document.getElementById("verifyBtn").onclick=startVerify;
+document.getElementById("retryBtn").onclick=()=>{
+  localStorage.removeItem(ACTIVE_KEY);
+  location.reload();
+};
+
+// ===== INIT =====
 setInterval(loadKey,1000);
 loadKey();
 </script>
