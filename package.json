@@ -1,0 +1,13 @@
+ {
+  "name": "web-get-key",
+  "version": "1.0.0",
+  "description": "Simple Web Get Key",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "uuid": "^9.0.1"
+  }
+ }
