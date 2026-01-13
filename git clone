@@ -1,0 +1,4 @@
+git clone https://github.com/username/web-get-key.git
+cd web-get-key
+npm install
+node server.js
