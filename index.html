@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>GET KEY ADMIN</title>
+<title>GET KEY SYSTEM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -23,7 +23,7 @@ video{
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:340px;
+  width:360px;
   background:rgba(0,0,0,.65);
   padding:25px;
   border-radius:16px;
@@ -36,7 +36,7 @@ video{
   border-radius:50%;
   object-fit:cover;
   border:3px solid #00ffcc;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 
 button{
@@ -53,14 +53,15 @@ button{
 .copyBtn{background:#222;color:#00ffcc}
 .success{color:#00ffcc}
 .error{color:#ff4d4d}
+.small{font-size:12px;opacity:.85;margin-top:6px}
 
-#status,#timeLeft{font-size:12px;opacity:.85;margin-top:8px}
-#keyBox{margin-top:15px;font-weight:bold;word-break:break-all}
+#keyBox{margin-top:14px;font-weight:bold;word-break:break-all}
 </style>
 </head>
 
 <body>
 
+<!-- VIDEO BACKGROUND -->
 <video autoplay muted loop playsinline>
   <source src="bg.mp4" type="video/mp4">
 </video>
@@ -68,20 +69,22 @@ button{
 <div class="container">
 
   <img src="logo.png" class="logo">
-  <div><b>Arsalways</b></div>
+  <div><b>Nama Pemilik</b></div>
 
   <button id="verifyBtn">VERIFIKASI</button>
   <button id="retryBtn" style="display:none">AMBIL KEY LAGI</button>
 
-  <div id="status"></div>
+  <div id="status" class="small"></div>
   <div id="keyBox"></div>
   <button id="copyBtn" class="copyBtn" style="display:none">COPY KEY</button>
-  <div id="timeLeft"></div>
+  <div id="timeLeft" class="small"></div>
 
 </div>
 
 <script>
-// ===== FINGERPRINT =====
+// =====================
+// DEVICE FINGERPRINT
+// =====================
 const DEVICE_ID = btoa(
   navigator.userAgent +
   navigator.language +
@@ -89,124 +92,40 @@ const DEVICE_ID = btoa(
   screen.height
 );
 
-// ===== STORAGE =====
+// =====================
+// STORAGE
+// =====================
 const ACTIVE_KEY = "ACTIVE_KEY_DATA";
-const USED_KEYS = "USED_KEYS_POOL";
+const USED_KEYS  = "USED_KEYS_POOL";
 
-// ===== KEY LIST =====
-const BASE_KEYS = [
-"KEY-ADMIN-000"
-"KEY-ADMIN-001"
-"KEY-ADMIN-002"
-"KEY-ADMIN-003"
-"KEY-ADMIN-004"
-"KEY-ADMIN-005"
-"KEY-ADMIN-006"
-"KEY-ADMIN-007"
-"KEY-ADMIN-008"
-"KEY-ADMIN-009"
-"KEY-ADMIN-010"
-"KEY-ADMIN-011"
-"KEY-ADMIN-012"
-"KEY-ADMIN-013"
-"KEY-ADMIN-014"
-"KEY-ADMIN-015"
-"KEY-ADMIN-016"
-"KEY-ADMIN-017"
-"KEY-ADMIN-018"
-"KEY-ADMIN-019"
-"KEY-ADMIN-020"
-"KEY-ADMIN-021"
-"KEY-ADMIN-022"
-"KEY-ADMIN-023"
-"KEY-ADMIN-024"
-"KEY-ADMIN-025"
-"KEY-ADMIN-026"
-"KEY-ADMIN-027"
-"KEY-ADMIN-028"
-"KEY-ADMIN-029"
-"KEY-ADMIN-030"
-"KEY-ADMIN-031"
-"KEY-ADMIN-032"
-"KEY-ADMIN-033"
-"KEY-ADMIN-034"
-"KEY-ADMIN-035"
-"KEY-ADMIN-036"
-"KEY-ADMIN-037"
-"KEY-ADMIN-038"
-"KEY-ADMIN-039"
-"KEY-ADMIN-040"
-"KEY-ADMIN-041"
-"KEY-ADMIN-042"
-"KEY-ADMIN-043"
-"KEY-ADMIN-044"
-"KEY-ADMIN-045"
-"KEY-ADMIN-046"
-"KEY-ADMIN-047"
-"KEY-ADMIN-048"
-"KEY-ADMIN-049"
-"KEY-ADMIN-050"
-"KEY-ADMIN-051"
-"KEY-ADMIN-052"
-"KEY-ADMIN-053"
-"KEY-ADMIN-054"
-"KEY-ADMIN-055"
-"KEY-ADMIN-056"
-"KEY-ADMIN-057"
-"KEY-ADMIN-058"
-"KEY-ADMIN-059"
-"KEY-ADMIN-060"
-"KEY-ADMIN-061"
-"KEY-ADMIN-062"
-"KEY-ADMIN-063"
-"KEY-ADMIN-064"
-"KEY-ADMIN-065"
-"KEY-ADMIN-066"
-"KEY-ADMIN-067"
-"KEY-ADMIN-068"
-"KEY-ADMIN-069"
-"KEY-ADMIN-070"
-"KEY-ADMIN-071"
-"KEY-ADMIN-072"
-"KEY-ADMIN-073"
-"KEY-ADMIN-074"
-"KEY-ADMIN-075"
-"KEY-ADMIN-076"
-"KEY-ADMIN-077"
-"KEY-ADMIN-078"
-"KEY-ADMIN-079"
-"KEY-ADMIN-080"
-"KEY-ADMIN-081"
-"KEY-ADMIN-082"
-"KEY-ADMIN-083"
-"KEY-ADMIN-084"
-"KEY-ADMIN-085"
-"KEY-ADMIN-086"
-"KEY-ADMIN-087"
-"KEY-ADMIN-088"
-"KEY-ADMIN-089"
-"KEY-ADMIN-090"
-"KEY-ADMIN-091"
-"KEY-ADMIN-092"
-"KEY-ADMIN-093"
-"KEY-ADMIN-094"
-"KEY-ADMIN-095"
-"KEY-ADMIN-096"
-"KEY-ADMIN-097"
-"KEY-ADMIN-098"
-"KEY-ADMIN-099"
-"KEY-ADMIN-100"];
+// =====================
+// CUSTOM + GAME KEYS
+// =====================
+const CUSTOM_KEYS = [
+  "KEY-ADMIN-00",
+  "KEY-1",
+  "KEY-2"
+];
 
-// ===== UTIL =====
-function randomKey(len=14){
+// GENERATE 1000 GAME KEYS (SAFE)
+const GAME_KEYS = Array.from({length:1000},(_,i)=>"GAME-"+i+"-"+randomKey(6));
+
+// =====================
+// UTIL
+// =====================
+function randomKey(len=12){
   const c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from({length:len},()=>c[Math.floor(Math.random()*c.length)]).join("");
 }
 
-function getUnusedKey(){
+// =====================
+// KEY PICKER (NO DUPLICATE)
+// =====================
+function getNewKey(){
   let used = JSON.parse(localStorage.getItem(USED_KEYS)||"[]");
+  let pool = ["KEY-ADMIN-000", "KEY-ADMIN-001", "KEY-ADMIN-002", "KEY-ADMIN-003", "KEY-ADMIN-004", "KEY-ADMIN-005", "KEY-ADMIN-006", "KEY-ADMIN-007", "KEY-ADMIN-008", "KEY-ADMIN-009", "KEY-ADMIN-010", "KEY-ADMIN-011", "KEY-ADMIN-012", "KEY-ADMIN-013", "KEY-ADMIN-014", "KEY-ADMIN-015", "KEY-ADMIN-016", "KEY-ADMIN-017", "KEY-ADMIN-018", "KEY-ADMIN-019", "KEY-ADMIN-020", "KEY-ADMIN-021", "KEY-ADMIN-022", "KEY-ADMIN-023", "KEY-ADMIN-024", "KEY-ADMIN-025", "KEY-ADMIN-026", "KEY-ADMIN-027", "KEY-ADMIN-028", "KEY-ADMIN-029", "KEY-ADMIN-030", "KEY-ADMIN-031", "KEY-ADMIN-032", "KEY-ADMIN-033", "KEY-ADMIN-034", "KEY-ADMIN-035", "KEY-ADMIN-036", "KEY-ADMIN-037", "KEY-ADMIN-038", "KEY-ADMIN-039", "KEY-ADMIN-040", "KEY-ADMIN-041", "KEY-ADMIN-042", "KEY-ADMIN-043", "KEY-ADMIN-044", "KEY-ADMIN-045", "KEY-ADMIN-046", "KEY-ADMIN-047", "KEY-ADMIN-048", "KEY-ADMIN-049", "KEY-ADMIN-050", "KEY-ADMIN-051", "KEY-ADMIN-052", "KEY-ADMIN-053", "KEY-ADMIN-054", "KEY-ADMIN-055", "KEY-ADMIN-056", "KEY-ADMIN-057", "KEY-ADMIN-058", "KEY-ADMIN-059", "KEY-ADMIN-060", "KEY-ADMIN-061", "KEY-ADMIN-062", "KEY-ADMIN-063", "KEY-ADMIN-064", "KEY-ADMIN-065", "KEY-ADMIN-066", "KEY-ADMIN-067", "KEY-ADMIN-068", "KEY-ADMIN-069", "KEY-ADMIN-070", "KEY-ADMIN-071", "KEY-ADMIN-072", "KEY-ADMIN-073", "KEY-ADMIN-074", "KEY-ADMIN-075", "KEY-ADMIN-076", "KEY-ADMIN-077", "KEY-ADMIN-078", "KEY-ADMIN-079", "KEY-ADMIN-080", "KEY-ADMIN-081", "KEY-ADMIN-082", "KEY-ADMIN-083", "KEY-ADMIN-084", "KEY-ADMIN-085", "KEY-ADMIN-086", "KEY-ADMIN-087", "KEY-ADMIN-088", "KEY-ADMIN-089", "KEY-ADMIN-090", "KEY-ADMIN-091", "KEY-ADMIN-092", "KEY-ADMIN-093", "KEY-ADMIN-094", "KEY-ADMIN-095", "KEY-ADMIN-096", "KEY-ADMIN-097", "KEY-ADMIN-098", "KEY-ADMIN-099", "KEY-ADMIN-100"];
 
-  for(let k of BASE_KEYS){
+  for(let k of pool){
     if(!used.includes(k)){
       used.push(k);
       localStorage.setItem(USED_KEYS,JSON.stringify(used));
@@ -214,13 +133,16 @@ function getUnusedKey(){
     }
   }
 
-  let rk = randomKey();
+  // fallback jika 1000+ habis
+  let rk = "RAND-"+randomKey(14);
   used.push(rk);
   localStorage.setItem(USED_KEYS,JSON.stringify(used));
   return rk;
 }
 
-// ===== LOAD =====
+// =====================
+// LOAD KEY
+// =====================
 function loadKey(){
   let data = JSON.parse(localStorage.getItem(ACTIVE_KEY));
   if(!data) return;
@@ -232,12 +154,14 @@ function loadKey(){
 
   let now = Date.now();
 
+  // RANDOMIZE AFTER 10 MIN
   if(!data.randomized && now - data.created >= 10*60*1000){
-    data.key = randomKey();
+    data.key = randomKey(14);
     data.randomized = true;
     localStorage.setItem(ACTIVE_KEY,JSON.stringify(data));
   }
 
+  // EXPIRED
   if(now >= data.expired){
     localStorage.removeItem(ACTIVE_KEY);
     showInvalid();
@@ -248,34 +172,32 @@ function loadKey(){
 }
 
 function lockUI(data){
-  document.getElementById("verifyBtn").style.display="none";
-  document.getElementById("retryBtn").style.display="none";
-  document.getElementById("copyBtn").style.display="block";
+  verifyBtn.style.display="none";
+  retryBtn.style.display="none";
+  copyBtn.style.display="block";
 
-  document.getElementById("keyBox").innerHTML =
+  keyBox.innerHTML =
     `<span class="success">KEY: <span id="keyText">${data.key}</span></span>`;
 
-  let s = Math.floor((data.expired - Date.now())/1000);
+  let s = Math.floor((data.expired-Date.now())/1000);
   let h = Math.floor(s/3600);
   let m = Math.floor((s%3600)/60);
   let d = s%60;
 
-  document.getElementById("timeLeft").innerText =
-    `Sisa waktu: ${h}j ${m}m ${d}d`;
+  timeLeft.innerText = `Sisa waktu: ${h}j ${m}m ${d}d`;
 }
 
 function showInvalid(){
-  document.getElementById("keyBox").innerHTML =
-    `<span class="error">KEY TIDAK VALID / SUDAH DIPAKAI</span>`;
-  document.getElementById("retryBtn").style.display="block";
+  keyBox.innerHTML =
+    `<span class="error">KEY SUDAH DIPAKAI / TIDAK VALID</span>`;
+  retryBtn.style.display="block";
 }
 
-// ===== VERIFY =====
-function startVerify(){
-  let btn=document.getElementById("verifyBtn");
-  let status=document.getElementById("status");
-  btn.disabled=true;
-
+// =====================
+// VERIFY PROCESS
+// =====================
+verifyBtn.onclick = ()=>{
+  verifyBtn.disabled=true;
   let c=10;
   status.innerText="Verifikasi: "+c;
 
@@ -288,7 +210,7 @@ function startVerify(){
 
       setTimeout(()=>{
         let data={
-          key:getUnusedKey(),
+          key:getNewKey(),
           device:DEVICE_ID,
           created:Date.now(),
           expired:Date.now()+24*60*60*1000,
@@ -299,24 +221,29 @@ function startVerify(){
       },1000);
     }
   },1000);
-}
-
-// ===== COPY =====
-document.getElementById("copyBtn").onclick=()=>{
-  navigator.clipboard.writeText(
-    document.getElementById("keyText").innerText
-  );
-  alert("KEY berhasil disalin");
 };
 
-// ===== BUTTON =====
-document.getElementById("verifyBtn").onclick=startVerify;
-document.getElementById("retryBtn").onclick=()=>{
+// =====================
+// RETRY
+// =====================
+retryBtn.onclick = ()=>{
   localStorage.removeItem(ACTIVE_KEY);
   location.reload();
 };
 
-// ===== INIT =====
+// =====================
+// COPY
+// =====================
+copyBtn.onclick = ()=>{
+  navigator.clipboard.writeText(
+    document.getElementById("keyText").innerText
+  );
+  alert("KEY disalin!");
+};
+
+// =====================
+// INIT
+// =====================
 setInterval(loadKey,1000);
 loadKey();
 </script>
