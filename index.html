@@ -22,10 +22,6 @@ button {
   background:#38bdf8;
   cursor:pointer;
 }
-button:disabled {
-  background:#475569;
-  cursor:not-allowed;
-}
 pre {
   margin-top:20px;
   background:#020617cc;
@@ -39,34 +35,17 @@ pre {
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>
-1 Device • Berlaku 24 Jam<br>
-Halaman ini hanya bisa dibuka lewat link resmi jangan refresh web key jika ada kendala get key tidak bisa di pencet itu kelalaian anda
-</p>
+<p>Key aktif 10 menit • Key baru wajib lewat SFL ulang</p>
 
-<button id="btn">GET KEY PREMIUM</button>
+<button id="btn">GET KEY</button>
 <pre id="out"></pre>
 
 <script>
 // ================================
-// 🔒 PROTEKSI WAJIB LEWAT SFL
+// 🔒 WAJIB LEWAT SFL
 // ================================
-const params = new URLSearchParams(window.location.search);
-
-// Jika tidak lewat SFL → TOLAK
-if (!params.has("from") || params.get("from") !== "sfl") {
-  document.body.innerHTML =
-    "<h2>❌ AKSES DITOLAK</h2><p>Silakan buka lewat link resmi</p>";
-  throw new Error("Blocked access");
-}
-
-// Cegah refresh / buka ulang
-if (sessionStorage.getItem("VISITED")) {
-  document.body.innerHTML =
-    "<h2>⛔ AKSES DIBLOKIR</h2><p>Silakan lewat link SFL ulang</p>";
-  throw new Error("Reload blocked");
-}
-sessionStorage.setItem("VISITED", "1");
+const params = new URLSearchParams(location.search);
+const viaSFL = params.get("from") === "sfl";
 
 // =====================
 // 🔑 KEY MANUAL
@@ -174,7 +153,8 @@ const KEY_LIST = [
 "KEY-ADMIN-100"
 ];
 
-const EXPIRE_TIME = 24 * 60 * 60 * 1000;
+// 10 menit
+const EXPIRE_TIME = 10 * 60 * 1000;
 
 // =====================
 // 🔐 DEVICE ID
@@ -189,46 +169,70 @@ function getDeviceId() {
 }
 
 const deviceId = getDeviceId();
-const STORAGE_KEY = "KEY_" + deviceId;
+const STORAGE_KEY = "KEY_DATA_" + deviceId;
 
 const btn = document.getElementById("btn");
 const out = document.getElementById("out");
 
-// Cek key lama
-const saved = localStorage.getItem(STORAGE_KEY);
-if (saved) {
+// =====================
+// RENDER KEY
+// =====================
+function render() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+
   const data = JSON.parse(saved);
-  if (Date.now() < data.expired) {
-    showKey(data.key, data.expired);
-    btn.disabled = true;
+  const now = Date.now();
+
+  if (now - data.time < EXPIRE_TIME) {
+    out.textContent =
+      "KEY ANDA:\n" + data.key +
+      "\n\nStatus: AKTIF";
   } else {
-    localStorage.removeItem(STORAGE_KEY);
+    out.textContent =
+      "LU KIRA INSTAN YA DONGO😹\n\nSilakan ambil key baru lewat SFL";
   }
 }
 
+// =====================
+// BUTTON CLICK
+// =====================
 btn.onclick = () => {
-  if (btn.disabled) return;
 
+  // Jika key ada & belum expired → tampilkan saja
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    const data = JSON.parse(saved);
+    if (Date.now() - data.time < EXPIRE_TIME) {
+      render();
+      return;
+    }
+  }
+
+  // Jika key expired tapi tidak lewat SFL → tolak
+  if (!viaSFL) {
+    out.textContent =
+      "❌ AKSES DITOLAK\n\nUntuk mendapatkan key baru, silakan lewat link SFL";
+    return;
+  }
+
+  // Generate key baru
   const randomKey =
     KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
 
-  const expiredAt = Date.now() + EXPIRE_TIME;
-
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ key: randomKey, expired: expiredAt })
+    JSON.stringify({
+      key: randomKey,
+      time: Date.now()
+    })
   );
 
-  showKey(randomKey, expiredAt);
-  btn.disabled = true;
+  render();
 };
 
-function showKey(key, expired) {
-  out.textContent =
-    "KEY ANDA:\n" + key +
-    "\n\nExpired:\n" +
-    new Date(expired).toLocaleString();
-}
+// Render saat load
+render();
 </script>
 
 </body>
