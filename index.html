@@ -2,22 +2,20 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Get Key Premium</title>
+<title>Get Key Secure</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Fingerprint -->
 <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
 <style>
-body {
-  background: url("https://d.top4top.io/p_3665on19b0.png") no-repeat center center fixed;
-  background-size: cover;
-  color: #e5e7eb;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding-top: 90px;
+body{
+  background:#020617;
+  color:#e5e7eb;
+  font-family:Arial,sans-serif;
+  text-align:center;
+  padding-top:80px;
 }
-button {
+button{
   padding:12px 26px;
   font-size:16px;
   border:none;
@@ -26,14 +24,14 @@ button {
   cursor:pointer;
   margin:6px;
 }
-pre {
+pre{
   margin-top:20px;
   background:#020617cc;
   padding:15px;
   border-radius:8px;
   word-break:break-all;
 }
-.whatsapp {
+.link{
   background:#22c55e;
   color:#000;
 }
@@ -43,23 +41,23 @@ pre {
 <body>
 
 <h2>🔐 GET KEY PREMIUM</h2>
-<p>1 Device • Aktif 10 Menit • Key baru wajib lewat SFL</p>
+<p>1 Device • Key 24 Jam • Reset Setelah 10 Menit</p>
 
-<button id="btn">GET KEY</button>
+<button id="getKey">GET KEY</button>
 <br>
-<button class="whatsapp" onclick="joinWA()">MASUK GRUP WHATSAPP</button>
+<button class="link" onclick="openChannel()">SALURAN / GRUP</button>
 
-<pre id="out"></pre>
+<pre id="output"></pre>
 
 <script>
-// =====================
+// =======================
 // KONFIGURASI
-// =====================
+// =======================
 const KEY_LIST = [
   "KEY-ADMIN-001",
   "KEY-ADMIN-002",
-  "KEY-ADMIN-003",
-  "KEY-ADMIN-004",
+  "KEY-ADMIN-003"
+  "KEY-ADMIN-004"
   "KEY-ADMIN-005"
   "KEY-ADMIN-006"
 "KEY-ADMIN-007"
@@ -158,103 +156,89 @@ const KEY_LIST = [
 "KEY-ADMIN-100"
 ];
 
-const ACTIVE_TIME = 10 * 60 * 1000; // 10 menit
+const RESET_TIME  = 10 * 60 * 1000;      // 10 menit
+const DEVICE_TIME = 24 * 60 * 60 * 1000; // 24 jam
 
-// =====================
+// =======================
 // CEK SFL
-// =====================
+// =======================
 const viaSFL =
   new URLSearchParams(location.search).get("from") === "sfl";
 
-// =====================
-// WHATSAPP
-// =====================
-function join Saluran() {
-  window.open("https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35", "_blank");
+// =======================
+// LINK SALURAN
+// =======================
+function openChannel(){
+  window.open("https://whatsapp.com/channel/0029VbBhgIzKLaHsWDFWGQ35","_blank");
 }
 
-// =====================
+// =======================
 // FINGERPRINT
-// =====================
-(async () => {
+// =======================
+(async()=>{
   const fp = await FingerprintJS.load();
   const { visitorId } = await fp.get();
 
   const STORAGE_KEY = "KEY_DATA_" + visitorId;
-  const btn = document.getElementById("btn");
-  const out = document.getElementById("out");
+  const btn = document.getElementById("getKey");
+  const out = document.getElementById("output");
 
-  function render() {
+  btn.onclick = ()=>{
+    const now = Date.now();
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
-      out.textContent = "Belum ada key.\nKlik GET KEY untuk mengambil.";
+
+    // ❌ Tidak lewat SFL
+    if(!viaSFL){
+      out.textContent = "❌ TOKEN INVALID\nSilakan lewat link resmi";
+      return;
+    }
+
+    // Belum pernah ambil key
+    if(!saved){
+      createKey(now);
       return;
     }
 
     const data = JSON.parse(saved);
-    const now = Date.now();
-    const expired = now - data.time >= ACTIVE_TIME;
 
-    out.textContent =
-      "KEY ANDA:\n" +
-      (expired ? "KEY SUDAH TIDAK AKTIF" : data.key) +
-      "\n\nStatus: " +
-      (expired ? "EXPIRED" : "AKTIF") +
-      "\nDibuat: " +
-      new Date(data.time).toLocaleString();
-  }
+    // Device masih terikat 24 jam
+    if(now - data.deviceTime < DEVICE_TIME){
 
-  btn.onclick = () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const now = Date.now();
-
-    // BELUM PUNYA KEY
-    if (!saved) {
-      if (!viaSFL) {
+      // Sudah lewat 10 menit → invalid
+      if(now - data.lastAccess > RESET_TIME){
         out.textContent =
-          "❌ AKSES DITOLAK\nAmbil key harus lewat link SFL";
+          "❌ TOKEN INVALID\nKey sudah expired\nSilakan lewat SFL ulang";
         return;
       }
-      createKey();
+
+      // Masih aktif
+      out.textContent =
+        "KEY ANDA:\n" + data.key +
+        "\n\nStatus: AKTIF" +
+        "\nExpired: " +
+        new Date(data.deviceTime + DEVICE_TIME).toLocaleString();
       return;
     }
 
-    const data = JSON.parse(saved);
-    const expired = now - data.time >= ACTIVE_TIME;
-
-    // MASIH AKTIF → TAMPILKAN
-    if (!expired) {
-      render();
-      return;
-    }
-
-    // SUDAH EXPIRED → BUTUH SFL ULANG
-    if (!viaSFL) {
-      render();
-      out.textContent +=
-        "\n\nUntuk mendapatkan key baru,\nSilakan lewat SFL ulang.";
-      return;
-    }
-
-    createKey();
+    // Device expired total → boleh buat ulang
+    createKey(now);
   };
 
-  function createKey() {
-    const randomKey =
-      KEY_LIST[Math.floor(Math.random() * KEY_LIST.length)];
+  function createKey(now){
+    const key =
+      KEY_LIST[Math.floor(Math.random()*KEY_LIST.length)];
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        key: randomKey,
-        time: Date.now()
-      })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      key: key,
+      deviceTime: now,
+      lastAccess: now
+    }));
 
-    render();
+    out.textContent =
+      "KEY ANDA:\n" + key +
+      "\n\nStatus: AKTIF" +
+      "\nBerlaku 24 Jam";
   }
-
-  render();
 })();
 </script>
 
