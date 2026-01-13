@@ -2,87 +2,107 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Get Key</title>
+  <title>Get Key Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       background: #0f172a;
-      color: white;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding-top: 120px;
+      padding: 80px 20px;
     }
-
     button {
-      padding: 12px 25px;
+      padding: 14px 30px;
       font-size: 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #38bdf8;
       cursor: pointer;
     }
-
     button:disabled {
       background: gray;
-      cursor: not-allowed;
     }
-
     #keyBox {
       margin-top: 20px;
-      font-size: 18px;
       word-break: break-all;
+      font-size: 17px;
+    }
+    small {
+      color: #94a3b8;
     }
   </style>
 
-  <!-- FingerprintJS -->
+  <!-- FingerprintJS (stabil di WebView) -->
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 </head>
 <body>
 
-  <h1>🔑 Get Your Key</h1>
-  <p>1 Key per Device (Fingerprint)</p>
+<h2>🔐 GET KEY PANEL</h2>
+<p>1 Device • Expired 24 Jam</p>
 
-  <button id="btn">Get Key</button>
-  <div id="keyBox"></div>
+<button id="btn">GET KEY</button>
+<div id="keyBox"></div>
 
-  <script>
-    const STORAGE_PREFIX = "KEY_FP_";
+<script>
+const EXPIRED = 24 * 60 * 60 * 1000; // 24 jam
 
-    function generateKey() {
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      let key = "KEY-";
-      for (let i = 0; i < 24; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return key;
+function generateKey() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let key = "PANEL-";
+  for (let i = 0; i < 20; i++) {
+    key += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return key;
+}
+
+async function init() {
+  const fp = await FingerprintJS.load();
+  const { visitorId } = await fp.get();
+
+  const STORAGE = "PANEL_KEY_" + visitorId;
+  const btn = document.getElementById("btn");
+  const box = document.getElementById("keyBox");
+
+  const saved = localStorage.getItem(STORAGE);
+
+  if (saved) {
+    const data = JSON.parse(saved);
+    if (Date.now() < data.expire) {
+      showKey(data.key, data.expire);
+      btn.disabled = true;
+      return;
+    } else {
+      localStorage.removeItem(STORAGE);
     }
+  }
 
-    async function init() {
-      const fp = await FingerprintJS.load();
-      const result = await fp.get();
-      const fingerprint = result.visitorId;
+  btn.onclick = () => {
+    const key = generateKey();
+    const expire = Date.now() + EXPIRED;
 
-      const storageKey = STORAGE_PREFIX + fingerprint;
-      const savedKey = localStorage.getItem(storageKey);
+    localStorage.setItem(STORAGE, JSON.stringify({ key, expire }));
+    showKey(key, expire);
+    btn.disabled = true;
 
-      const btn = document.getElementById("btn");
-      const box = document.getElementById("keyBox");
-
-      if (savedKey) {
-        box.innerHTML = "<b>Your Key:</b><br>" + savedKey;
-        btn.disabled = true;
-        return;
-      }
-
-      btn.onclick = () => {
-        const newKey = generateKey();
-        localStorage.setItem(storageKey, newKey);
-        box.innerHTML = "<b>Your Key:</b><br>" + newKey;
-        btn.disabled = true;
-      };
+    // Kirim ke APK Panel (opsional)
+    if (window.Android) {
+      Android.onGetKey(key);
     }
+  };
+}
 
-    init();
-  </script>
+function showKey(key, expire) {
+  const sisa = Math.floor((expire - Date.now()) / 1000);
+  document.getElementById("keyBox").innerHTML = `
+    <b>KEY ANDA:</b><br>${key}<br>
+    <small>Expired dalam ${sisa} detik</small>
+  `;
+}
+
+init();
+</script>
 
 </body>
 </html>
